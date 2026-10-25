@@ -29,9 +29,9 @@ export function ExerciseModal({ exercise, onClose }: ExerciseModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div className="exercise-modal-backdrop fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
       <div
-        className="bracket bg-zinc-950 border border-white/[0.12] w-full max-w-3xl max-h-[90vh] rounded-2xl flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        className="exercise-modal bracket bg-zinc-950 border border-white/[0.12] w-full max-w-3xl max-h-[90vh] rounded-2xl flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
         style={{ backdropFilter: "blur(24px)" }}
       >
         {/* Header HUD */}

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { WgerExerciseInfo, WgerTranslation } from "@/types/wger";
-import { Dumbbell, Eye, Layers, ArrowUpRight } from "lucide-react";
+import { Dumbbell, ChevronRight, Layers } from "lucide-react";
 
 interface ExerciseCardProps {
   exercise: WgerExerciseInfo;
@@ -12,135 +12,126 @@ interface ExerciseCardProps {
 export function ExerciseCard({ exercise, onSelect }: ExerciseCardProps) {
   const [imageError, setImageError] = useState(false);
 
-  // Find preferred translation: Spanish (4), then English (2), then first available
   const translation: WgerTranslation | undefined =
     exercise.translations.find((t) => t.language === 4) ||
     exercise.translations.find((t) => t.language === 2) ||
     exercise.translations[0];
 
   const exerciseName = translation?.name || `Ejercicio #${exercise.id}`;
-  const cleanDescription = translation?.description_source || 
+  const cleanDescription =
+    translation?.description_source ||
     translation?.description?.replace(/<[^>]*>?/gm, "").trim() ||
-    "Sin descripción disponible para este ejercicio.";
+    "Sin descripción disponible.";
 
   const mainImage = exercise.images.find((img) => img.is_main) || exercise.images[0];
   const imageUrl = mainImage?.thumbnails?.medium || mainImage?.image;
 
   return (
-    <div
+    <button
       onClick={() => onSelect(exercise)}
-      className="group bracket cursor-pointer bg-zinc-950/90 border border-white/[0.08] hover:border-white/20 rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between"
-      style={{ backdropFilter: "blur(16px)" }}
+      className="group w-full text-left rounded-xl overflow-hidden transition-all duration-200 ease-out hover:scale-[1.01] active:scale-[0.99] animate-slide-up"
+      style={{
+        background: "rgba(28, 28, 30, 0.72)",
+        backdropFilter: "saturate(180%) blur(40px)",
+        WebkitBackdropFilter: "saturate(180%) blur(40px)",
+        border: "0.5px solid rgba(255, 255, 255, 0.18)",
+        boxShadow: "0 8px 30px -12px rgba(0, 0, 0, 0.8)",
+      }}
     >
-      <div>
-        {/* Visual Frame / Media Area */}
-        <div className="img-wrapper relative w-full h-52 bg-[#050505] flex items-center justify-center border-b border-white/[0.06]">
+      <div className="flex flex-col">
+        {/* Image Area */}
+        <div className="relative w-full h-36 bg-gradient-to-b from-white/[0.02] to-transparent flex items-center justify-center overflow-hidden">
           {imageUrl && !imageError ? (
             <img
               src={imageUrl}
               alt={exerciseName}
               onError={() => setImageError(true)}
-              className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500 ease-out"
+              className="w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
             />
           ) : (
-            <div className="flex flex-col items-center justify-center text-zinc-700 gap-2 p-4 text-center">
-              <Dumbbell className="w-10 h-10 stroke-[1.2] text-zinc-800 group-hover:text-zinc-500 transition-colors" />
-              <span className="font-mono text-[9px] uppercase tracking-widest text-zinc-600">
-                SIN VISTA PREVIA
-              </span>
+            <div className="flex flex-col items-center justify-center gap-2">
+              <Dumbbell className="w-9 h-9 text-[rgba(235,235,245,0.3)]" strokeWidth={1.5} />
             </div>
           )}
 
-          {/* Top Left: Category Badge */}
           {exercise.category?.name && (
-            <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-black/75 backdrop-blur-md border border-white/[0.12] px-2.5 py-1 rounded-md">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-              <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-zinc-200">
-                {exercise.category.name}
-              </span>
+            <div
+              className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[11px] font-medium"
+              style={{
+                background: "rgba(28, 28, 30, 0.6)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
+                border: "0.5px solid rgba(255, 255, 255, 0.18)",
+                color: "rgba(235, 235, 245, 0.9)",
+              }}
+            >
+              {exercise.category.name}
             </div>
           )}
 
-          {/* Top Right: Image Count Badge */}
           {exercise.images.length > 1 && (
-            <div className="absolute top-3 right-3 bg-black/75 backdrop-blur-md border border-white/[0.1] text-zinc-300 font-mono text-[9px] px-2 py-0.5 rounded-md flex items-center gap-1">
-              <Layers className="w-3 h-3 text-zinc-400" />
-              <span>{exercise.images.length} IMÁGENES</span>
+            <div
+              className="absolute top-3 right-3 px-2 py-1 rounded-full flex items-center gap-1 text-[10px]"
+              style={{
+                background: "rgba(28, 28, 30, 0.6)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
+                border: "0.5px solid rgba(255, 255, 255, 0.18)",
+                color: "rgba(235, 235, 245, 0.6)",
+              }}
+            >
+              <Layers className="w-3 h-3" />
+              <span>{exercise.images.length}</span>
             </div>
           )}
-
-          {/* Bottom Right ID Pill */}
-          <span className="absolute bottom-2.5 right-3 font-mono text-[9px] text-zinc-500 bg-black/60 px-2 py-0.5 rounded border border-white/[0.05]">
-            #{exercise.id}
-          </span>
         </div>
 
-        {/* Card Body */}
-        <div className="p-5">
-          <div className="flex items-start justify-between gap-3 mb-2">
-            <h3 className="font-display font-bold text-base text-zinc-100 group-hover:text-white transition-colors line-clamp-1 tracking-tight">
+        {/* Content */}
+        <div className="p-3 space-y-2">
+          <div className="flex items-start justify-between gap-1.5">
+            <h3 className="font-semibold text-[14px] leading-tight tracking-tight line-clamp-1 flex-1">
               {exerciseName}
             </h3>
-            <ArrowUpRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0 mt-0.5" />
+            <ChevronRight className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: "rgba(235, 235, 245, 0.3)" }} />
           </div>
 
-          <p className="text-zinc-400 text-xs line-clamp-2 mb-4 leading-relaxed font-normal">
+          <p className="text-[12px] leading-relaxed line-clamp-1" style={{ color: "rgba(235, 235, 245, 0.5)" }}>
             {cleanDescription}
           </p>
 
-          {/* Target Muscles and Equipment Chips */}
-          <div className="space-y-2.5 pt-1 border-t border-white/[0.04]">
-            {exercise.muscles && exercise.muscles.length > 0 && (
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-500">
-                  Objetivo:
+          {(exercise.muscles?.length > 0 || exercise.equipment?.length > 0) && (
+            <div className="flex flex-wrap gap-1">
+              {exercise.muscles?.slice(0, 1).map((m) => (
+                <span
+                  key={m.id}
+                  className="px-1.5 py-0.5 rounded-full text-[10px] font-medium"
+                  style={{
+                    background: "rgba(10, 132, 255, 0.18)",
+                    color: "#0a84ff",
+                    border: "0.5px solid rgba(10, 132, 255, 0.3)",
+                  }}
+                >
+                  {m.name_en || m.name}
                 </span>
-                {exercise.muscles.slice(0, 2).map((m) => (
-                  <span
-                    key={m.id}
-                    className="font-mono text-[10px] font-medium bg-zinc-900 border border-white/[0.08] text-zinc-300 px-2 py-0.5 rounded-md"
-                  >
-                    {m.name_en || m.name}
-                  </span>
-                ))}
-                {exercise.muscles.length > 2 && (
-                  <span className="font-mono text-[9px] text-zinc-500">
-                    +{exercise.muscles.length - 2}
-                  </span>
-                )}
-              </div>
-            )}
-
-            {exercise.equipment && exercise.equipment.length > 0 && (
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-500">
-                  Equipo:
+              ))}
+              {exercise.equipment?.slice(0, 1).map((eq) => (
+                <span
+                  key={eq.id}
+                  className="px-1.5 py-0.5 rounded-full text-[10px]"
+                  style={{
+                    background: "rgba(255, 255, 255, 0.08)",
+                    color: "rgba(235, 235, 245, 0.6)",
+                    border: "0.5px solid rgba(255, 255, 255, 0.12)",
+                  }}
+                >
+                  {eq.name}
                 </span>
-                {exercise.equipment.map((eq) => (
-                  <span
-                    key={eq.id}
-                    className="font-mono text-[10px] text-zinc-400 bg-zinc-900/60 border border-white/[0.05] px-2 py-0.5 rounded-md"
-                  >
-                    {eq.name}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Card Action Strip */}
-      <div className="px-5 pb-4 pt-1">
-        <div className="w-full py-2 px-3 rounded-lg bg-white/[0.03] group-hover:bg-white/[0.08] border border-white/[0.06] group-hover:border-white/[0.15] text-zinc-300 group-hover:text-white font-mono text-[11px] font-semibold flex items-center justify-between transition-all">
-          <span className="flex items-center gap-1.5">
-            <Eye className="w-3.5 h-3.5 text-zinc-400" />
-            Ver detalles y datos crudos
-          </span>
-          <span className="text-zinc-500 group-hover:text-zinc-300">&rarr;</span>
-        </div>
-      </div>
-    </div>
+    </button>
   );
 }
