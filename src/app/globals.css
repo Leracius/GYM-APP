@@ -1,26 +1,162 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --bg: #0a0a0a;
+  --bg-1: #111111;
+  --bg-2: #18181b;
+  --ink: #f5f5f7;
+  --ink-2: #a1a1aa;
+  --ink-3: #71717a;
+  --ink-4: #27272a;
+  --rule: rgba(255, 255, 255, 0.08);
+  --rule-bright: rgba(255, 255, 255, 0.18);
+  --accent: #c084fc;
+  --teal: #34d399;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
+}
+
+.font-display {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* WorkoutX Ambient Grid Field */
+.grid-pattern {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: radial-gradient(ellipse 80% 50% at 50% 0%, #000 0%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 50% at 50% 0%, #000 0%, transparent 80%);
+  z-index: 0;
+}
+
+/* HUD Labels */
+.hud {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* Ticker marquee */
+.ticker-mask {
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.ticker-track {
+  display: inline-flex;
+  gap: 36px;
+  white-space: nowrap;
+  animation: ticker 40s linear infinite;
+}
+
+@keyframes ticker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Corner Bracket Accents */
+.bracket {
+  position: relative;
+}
+
+.bracket::before,
+.bracket::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.bracket::before {
+  top: 6px;
+  left: 6px;
+  border-right: 0;
+  border-bottom: 0;
+}
+
+.bracket::after {
+  bottom: 6px;
+  right: 6px;
+  border-left: 0;
+  border-top: 0;
+}
+
+.bracket:hover::before,
+.bracket:hover::after,
+.bracket.active::before,
+.bracket.active::after {
+  opacity: 1;
+}
+
+/* Scanline sweep on exercise preview hover */
+.img-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+.img-wrapper::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 35px;
+  z-index: 10;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent);
+  transform: translateY(-40px);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.img-wrapper:hover::after {
+  opacity: 1;
+  animation: sweep 2.2s linear infinite;
+}
+
+@keyframes sweep {
+  0% {
+    transform: translateY(-40px);
+  }
+  100% {
+    transform: translateY(220px);
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+}
+
+.pulse-live {
+  animation: pulse-dot 1.8s ease-in-out infinite;
 }
