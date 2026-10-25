@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { WgerExerciseInfo, WgerApiResponse } from "@/types/wger";
 import { ExerciseCard } from "@/components/ExerciseCard";
 import { ApiResponseViewer } from "@/components/ApiResponseViewer";
-import { ExerciseModal } from "@/components/ExerciseModal";
 import { Search, Dumbbell, RefreshCw, Code2, LayoutGrid, AlertCircle, X, CalendarDays, Play, Sun, Moon, Palette, Check, Download } from "lucide-react";
 import { WorkoutWorkspace } from "@/components/WorkoutWorkspace";
 import { PwaOnboarding } from "@/components/PwaOnboarding";
@@ -55,10 +55,12 @@ export default function Home() {
   const [apiData, setApiData] = useState<LocalApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedExercise, setSelectedExercise] = useState<WgerExerciseInfo | null>(null);
   const [viewMode, setViewMode] = useState<"cards" | "json">("cards");
 
   useEffect(() => {
+    const libraryTimer = new URLSearchParams(window.location.search).get("library") === "wger"
+      ? window.setTimeout(() => setActiveSection("library"), 0)
+      : undefined;
     const timer = window.setTimeout(() => {
       const savedTheme = window.localStorage.getItem("my-workout-app.theme");
       const savedColor = window.localStorage.getItem("my-workout-app.color-theme");
@@ -70,7 +72,10 @@ export default function Home() {
       setColorTheme(nextColor);
       setThemeReady(true);
     }, 0);
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      if (libraryTimer !== undefined) window.clearTimeout(libraryTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -166,7 +171,8 @@ export default function Home() {
           <nav className="flex items-center gap-1" aria-label="Navegación principal">
             <button onClick={() => setActiveSection("workout")} className={`nav-button ${activeSection === "workout" ? "nav-button-active" : ""}`} aria-current={activeSection === "workout" ? "page" : undefined}><Play className="h-3.5 w-3.5" /><span>Entrenar</span></button>
             <button onClick={() => setActiveSection("calendar")} className={`nav-button ${activeSection === "calendar" ? "nav-button-active" : ""}`} aria-current={activeSection === "calendar" ? "page" : undefined}><CalendarDays className="h-3.5 w-3.5" /><span>Calendario</span></button>
-            <button onClick={() => setActiveSection("library")} className={`nav-button ${activeSection === "library" ? "nav-button-active" : ""}`} aria-current={activeSection === "library" ? "page" : undefined}><Dumbbell className="h-3.5 w-3.5" /><span>Ejercicios</span></button>
+            <button onClick={() => setActiveSection("library")} className={`nav-button ${activeSection === "library" ? "nav-button-active" : ""}`} aria-current={activeSection === "library" ? "page" : undefined}><Dumbbell className="h-3.5 w-3.5" /><span>wger</span></button>
+            <Link href="/gymfit" className="nav-button"><Dumbbell className="h-3.5 w-3.5" /><span>GymFit</span></Link>
           </nav>
 
           <div className="flex items-center gap-2">
@@ -226,6 +232,9 @@ export default function Home() {
               Descubre ejercicios de la base de datos abierta{" "}
               <span style={{ color: "rgba(235, 235, 245, 0.9)" }}>wger Workout Manager</span>
             </p>
+            <Link href="/gymfit" className="inline-flex min-h-11 items-center rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] px-4 text-sm font-semibold text-[var(--accent)] transition hover:brightness-110">
+              Abrir GymFit
+            </Link>
           </div>
 
           <div className="flex flex-wrap gap-3 pt-2">
@@ -421,7 +430,6 @@ export default function Home() {
                       <ExerciseCard
                         key={exercise.id}
                         exercise={exercise}
-                        onSelect={(item) => setSelectedExercise(item)}
                       />
                     ))}
                   </div>
@@ -468,7 +476,6 @@ export default function Home() {
         </div>
       </footer>
 
-      <ExerciseModal exercise={selectedExercise} onClose={() => setSelectedExercise(null)} />
       <PwaOnboarding />
     </div>
   );

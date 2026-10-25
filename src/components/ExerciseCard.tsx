@@ -1,15 +1,15 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { WgerExerciseInfo, WgerTranslation } from "@/types/wger";
 import { Dumbbell, ChevronRight, Layers } from "lucide-react";
 
 interface ExerciseCardProps {
   exercise: WgerExerciseInfo;
-  onSelect: (exercise: WgerExerciseInfo) => void;
 }
 
-export function ExerciseCard({ exercise, onSelect }: ExerciseCardProps) {
+export function ExerciseCard({ exercise }: ExerciseCardProps) {
   const [imageError, setImageError] = useState(false);
 
   const translation: WgerTranslation | undefined =
@@ -27,8 +27,8 @@ export function ExerciseCard({ exercise, onSelect }: ExerciseCardProps) {
   const imageUrl = mainImage?.thumbnails?.medium || mainImage?.image;
 
   return (
-    <button
-      onClick={() => onSelect(exercise)}
+    <Link
+      href={`/ejercicios/wger/${exercise.id}`}
       className="group w-full text-left rounded-xl overflow-hidden transition-all duration-200 ease-out hover:scale-[1.01] active:scale-[0.99] animate-slide-up"
       style={{
         background: "rgba(28, 28, 30, 0.72)",
@@ -132,6 +132,6 @@ export function ExerciseCard({ exercise, onSelect }: ExerciseCardProps) {
           )}
         </div>
       </div>
-    </button>
+    </Link>
   );
 }
