@@ -4,7 +4,8 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "My Workout App",
   description: "Registrá tus entrenamientos, series y rutinas.",
-  icons: { icon: "/icon.svg", shortcut: "/favicon.ico" },
+  icons: { icon: "/icon.svg", shortcut: "/favicon.ico", apple: "/apple-touch-icon.png" },
+  appleWebApp: { capable: true, title: "My Workout", statusBarStyle: "default" },
 };
 
 export default function RootLayout({

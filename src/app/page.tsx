@@ -5,8 +5,9 @@ import { WgerExerciseInfo, WgerApiResponse } from "@/types/wger";
 import { ExerciseCard } from "@/components/ExerciseCard";
 import { ApiResponseViewer } from "@/components/ApiResponseViewer";
 import { ExerciseModal } from "@/components/ExerciseModal";
-import { Search, Dumbbell, RefreshCw, Code2, LayoutGrid, AlertCircle, X, CalendarDays, Play, Sun, Moon, Palette, Check } from "lucide-react";
+import { Search, Dumbbell, RefreshCw, Code2, LayoutGrid, AlertCircle, X, CalendarDays, Play, Sun, Moon, Palette, Check, Download } from "lucide-react";
 import { WorkoutWorkspace } from "@/components/WorkoutWorkspace";
+import { PwaOnboarding } from "@/components/PwaOnboarding";
 import { readWorkoutLog, WorkoutSession, writeWorkoutLog } from "@/lib/workout-log";
 
 interface LocalApiResponse {
@@ -169,6 +170,9 @@ export default function Home() {
           </nav>
 
           <div className="flex items-center gap-2">
+          <button className="theme-toggle pwa-trigger" onClick={() => window.dispatchEvent(new Event("my-workout-app:show-install"))} aria-label="Instalar o guardar My Workout App" title="Instalar o guardar app">
+            <Download className="h-[18px] w-[18px]" />
+          </button>
           <div className="appearance-wrap">
             <button className="theme-toggle" onClick={() => setAppearanceOpen((open) => !open)} aria-label="Apariencia y colores" aria-expanded={appearanceOpen} aria-controls="appearance-panel" title="Apariencia y colores">
               <Palette className="h-[18px] w-[18px]" />
@@ -465,6 +469,7 @@ export default function Home() {
       </footer>
 
       <ExerciseModal exercise={selectedExercise} onClose={() => setSelectedExercise(null)} />
+      <PwaOnboarding />
     </div>
   );
 }
