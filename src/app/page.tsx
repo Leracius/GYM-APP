@@ -5,7 +5,7 @@ import Link from "next/link";
 import { WgerExerciseInfo, WgerApiResponse } from "@/types/wger";
 import { ExerciseCard } from "@/components/ExerciseCard";
 import { ApiResponseViewer } from "@/components/ApiResponseViewer";
-import { Search, Dumbbell, RefreshCw, Code2, LayoutGrid, AlertCircle, X, CalendarDays, Play, Sun, Moon, Palette, Check, Download } from "lucide-react";
+import { Search, Dumbbell, RefreshCw, Code2, LayoutGrid, AlertCircle, X, CalendarDays, Play, Sun, Moon, Palette, Check, Download, ArrowUpRight, SlidersHorizontal } from "lucide-react";
 import { WorkoutWorkspace } from "@/components/WorkoutWorkspace";
 import { PwaOnboarding } from "@/components/PwaOnboarding";
 import { readWorkoutLog, WorkoutSession, writeWorkoutLog } from "@/lib/workout-log";
@@ -155,7 +155,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col relative">
+    <div className="app-shell min-h-screen flex flex-col relative">
       <header
         className="sticky top-0 z-30 material-thin border-b"
         style={{ borderColor: "rgba(84, 84, 88, 0.65)" }}
@@ -171,8 +171,7 @@ export default function Home() {
           <nav className="flex items-center gap-1" aria-label="Navegación principal">
             <button onClick={() => setActiveSection("workout")} className={`nav-button ${activeSection === "workout" ? "nav-button-active" : ""}`} aria-current={activeSection === "workout" ? "page" : undefined}><Play className="h-3.5 w-3.5" /><span>Entrenar</span></button>
             <button onClick={() => setActiveSection("calendar")} className={`nav-button ${activeSection === "calendar" ? "nav-button-active" : ""}`} aria-current={activeSection === "calendar" ? "page" : undefined}><CalendarDays className="h-3.5 w-3.5" /><span>Calendario</span></button>
-            <button onClick={() => setActiveSection("library")} className={`nav-button ${activeSection === "library" ? "nav-button-active" : ""}`} aria-current={activeSection === "library" ? "page" : undefined}><Dumbbell className="h-3.5 w-3.5" /><span>wger</span></button>
-            <Link href="/gymfit" className="nav-button"><Dumbbell className="h-3.5 w-3.5" /><span>GymFit</span></Link>
+            <button onClick={() => setActiveSection("library")} className={`nav-button ${activeSection === "library" ? "nav-button-active" : ""}`} aria-current={activeSection === "library" ? "page" : undefined}><Dumbbell className="h-3.5 w-3.5" /><span>Ejercicios</span></button>
           </nav>
 
           <div className="flex items-center gap-2">
@@ -232,10 +231,17 @@ export default function Home() {
               Descubre ejercicios de la base de datos abierta{" "}
               <span style={{ color: "rgba(235, 235, 245, 0.9)" }}>wger Workout Manager</span>
             </p>
-            <Link href="/gymfit" className="inline-flex min-h-11 items-center rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] px-4 text-sm font-semibold text-[var(--accent)] transition hover:brightness-110">
-              Abrir GymFit
-            </Link>
           </div>
+
+          <Link href="/gymfit" className="gymfit-intro group block rounded-3xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-5 transition sm:p-6" aria-label="Abrir GymFit, explorador avanzado de ejercicios">
+            <div className="flex items-start justify-between gap-4">
+              <div className="gymfit-intro-icon flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-fill)] text-[var(--accent-on-fill)]"><SlidersHorizontal className="h-5 w-5" aria-hidden="true" /></div>
+              <ArrowUpRight className="gymfit-intro-arrow h-5 w-5 shrink-0 text-[var(--accent)]" aria-hidden="true" />
+            </div>
+            <h2 className="mt-4 text-xl font-semibold text-[var(--text-primary)]">Descubrí GymFit</h2>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--text-secondary)]">Un explorador más detallado para buscar ejercicios con sugerencias, filtros por equipo y dificultad, y recorrerlos por grupo muscular.</p>
+            <span className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-[var(--accent)]">Explorar GymFit <ArrowUpRight className="ml-1.5 h-4 w-4" aria-hidden="true" /></span>
+          </Link>
 
           <div className="flex flex-wrap gap-3 pt-2">
             <div
@@ -467,6 +473,21 @@ export default function Home() {
       </main> : <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
         {storageReady && <WorkoutWorkspace view={activeSection} sessions={sessions} onSessionsChange={setSessions} onNavigateToWorkout={() => setActiveSection("workout")} />}
       </main>}
+
+      <nav className="mobile-tabbar" aria-label="Navegación principal">
+        <button type="button" onClick={() => setActiveSection("workout")} className={`mobile-tab ${activeSection === "workout" ? "mobile-tab-active" : ""}`} aria-label="Entrenamiento libre" aria-current={activeSection === "workout" ? "page" : undefined}>
+          <Play aria-hidden="true" />
+          <span>Entrenar</span>
+        </button>
+        <button type="button" onClick={() => setActiveSection("calendar")} className={`mobile-tab ${activeSection === "calendar" ? "mobile-tab-active" : ""}`} aria-label="Calendario" aria-current={activeSection === "calendar" ? "page" : undefined}>
+          <CalendarDays aria-hidden="true" />
+          <span>Calendario</span>
+        </button>
+        <button type="button" onClick={() => setActiveSection("library")} className={`mobile-tab ${activeSection === "library" ? "mobile-tab-active" : ""}`} aria-label="Explorador de ejercicios" aria-current={activeSection === "library" ? "page" : undefined}>
+          <Dumbbell aria-hidden="true" />
+          <span>Explorar</span>
+        </button>
+      </nav>
 
       <footer className="mt-12 py-6 border-t" style={{ borderColor: "rgba(84, 84, 88, 0.65)" }}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
