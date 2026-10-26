@@ -29,6 +29,7 @@ export interface WgerImage {
   thumbnails?: WgerImageThumbnail;
   is_main: boolean;
   style?: string;
+  is_ai_generated?: boolean;
 }
 
 export interface WgerTranslation {
