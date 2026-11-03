@@ -1,5 +1,5 @@
-const CACHE_NAME = "my-workout-app-v2";
-const CORE_ASSETS = ["/", "/offline.html", "/manifest.webmanifest", "/pwa-192.png", "/pwa-512.png", "/pwa-maskable-512.png"];
+const CACHE_NAME = "my-workout-app-v3";
+const CORE_ASSETS = ["/", "/offline.html", "/manifest.webmanifest", "/pwa-192.png", "/pwa-512.png", "/pwa-maskable-512.png", "/my-workout-dumbbell.png"];
 
 async function cacheResponse(request, response) {
   const cache = await caches.open(CACHE_NAME);

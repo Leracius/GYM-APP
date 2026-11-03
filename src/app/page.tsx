@@ -5,9 +5,10 @@ import Link from "next/link";
 import { WgerExerciseInfo, WgerApiResponse } from "@/types/wger";
 import { ExerciseCard } from "@/components/ExerciseCard";
 import { ApiResponseViewer } from "@/components/ApiResponseViewer";
-import { Search, Dumbbell, RefreshCw, Code2, LayoutGrid, AlertCircle, X, CalendarDays, Play, Sun, Moon, Palette, Check, Download, ArrowUpRight, SlidersHorizontal, ClipboardList } from "lucide-react";
+import { Search, Dumbbell, RefreshCw, Code2, LayoutGrid, AlertCircle, X, CalendarDays, Play, Sun, Moon, Palette, Check, Download, ArrowUpRight, SlidersHorizontal, ClipboardList, House } from "lucide-react";
 import { WorkoutWorkspace } from "@/components/WorkoutWorkspace";
 import { RoutineWorkspace } from "@/components/RoutineWorkspace";
+import { HomeWorkspace } from "@/components/HomeWorkspace";
 import { PwaOnboarding } from "@/components/PwaOnboarding";
 import { createId, localDateKey, readWorkoutLog, WorkoutSession, writeWorkoutLog } from "@/lib/workout-log";
 import { readRoutines, WorkoutRoutine, writeRoutines } from "@/lib/routines";
@@ -45,7 +46,7 @@ const COLOR_THEMES = [
 type ColorTheme = (typeof COLOR_THEMES)[number]["id"];
 
 export default function Home() {
-  const [activeSection, setActiveSection] = useState<"workout" | "calendar" | "library" | "routines">("workout");
+  const [activeSection, setActiveSection] = useState<"home" | "workout" | "calendar" | "library" | "routines">("home");
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const [routines, setRoutines] = useState<WorkoutRoutine[]>([]);
   const [storageReady, setStorageReady] = useState(false);
@@ -138,6 +139,22 @@ export default function Home() {
     setActiveSection("workout");
   }
 
+  function startFreeWorkout() {
+    const active = sessions.find((session) => session.status === "in_progress");
+    if (!active) {
+      const session: WorkoutSession = {
+        id: createId(),
+        date: localDateKey(new Date()),
+        startedAt: new Date().toISOString(),
+        status: "in_progress",
+        exercises: [],
+        notes: "",
+      };
+      setSessions([session, ...sessions]);
+    }
+    setActiveSection("workout");
+  }
+
   const fetchExercises = useCallback(async (query: string) => {
     setLoading(true);
     setError(null);
@@ -200,6 +217,7 @@ export default function Home() {
           </div>
 
           <nav className="flex items-center gap-1" aria-label="Navegación principal">
+            <button onClick={() => setActiveSection("home")} className={`nav-button ${activeSection === "home" ? "nav-button-active" : ""}`} aria-current={activeSection === "home" ? "page" : undefined}><House className="h-3.5 w-3.5" /><span>Inicio</span></button>
             <button onClick={() => setActiveSection("workout")} className={`nav-button ${activeSection === "workout" ? "nav-button-active" : ""}`} aria-current={activeSection === "workout" ? "page" : undefined}><Play className="h-3.5 w-3.5" /><span>Entrenar</span></button>
             <button onClick={() => setActiveSection("calendar")} className={`nav-button ${activeSection === "calendar" ? "nav-button-active" : ""}`} aria-current={activeSection === "calendar" ? "page" : undefined}><CalendarDays className="h-3.5 w-3.5" /><span>Calendario</span></button>
             <button onClick={() => setActiveSection("library")} className={`nav-button ${activeSection === "library" ? "nav-button-active" : ""}`} aria-current={activeSection === "library" ? "page" : undefined}><Dumbbell className="h-3.5 w-3.5" /><span>Ejercicios</span></button>
@@ -502,13 +520,29 @@ export default function Home() {
             </>
           )}
         </section>
-      </main> : activeSection === "routines" ? <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
+      </main> : activeSection === "home" ? <main id="main-content" className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
+        {storageReady && <HomeWorkspace
+          activeSession={sessions.find((session) => session.status === "in_progress")}
+          latestCompleted={sessions.find((session) => session.status === "completed")}
+          completedSessionCount={sessions.filter((session) => session.status === "completed").length}
+          routineCount={routines.length}
+          onStartWorkout={startFreeWorkout}
+          onContinueWorkout={() => setActiveSection("workout")}
+          onOpenRoutines={() => setActiveSection("routines")}
+          onOpenCalendar={() => setActiveSection("calendar")}
+          onOpenExercises={() => setActiveSection("library")}
+        />}
+      </main> : activeSection === "routines" ? <main id="main-content" className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
         {storageReady && <RoutineWorkspace routines={routines} onRoutinesChange={setRoutines} onStartRoutine={startRoutine} hasActiveSession={sessions.some((session) => session.status === "in_progress")} />}
-      </main> : <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
+      </main> : <main id="main-content" className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
         {storageReady && <WorkoutWorkspace view={activeSection} sessions={sessions} onSessionsChange={setSessions} routines={routines} onStartRoutine={startRoutine} onNavigateToRoutines={() => setActiveSection("routines")} onNavigateToWorkout={() => setActiveSection("workout")} />}
       </main>}
 
       <nav className="mobile-tabbar" aria-label="Navegación principal">
+        <button type="button" onClick={() => setActiveSection("home")} className={`mobile-tab ${activeSection === "home" ? "mobile-tab-active" : ""}`} aria-label="Inicio" aria-current={activeSection === "home" ? "page" : undefined}>
+          <House aria-hidden="true" />
+          <span>Inicio</span>
+        </button>
         <button type="button" onClick={() => setActiveSection("workout")} className={`mobile-tab ${activeSection === "workout" ? "mobile-tab-active" : ""}`} aria-label="Entrenamiento libre" aria-current={activeSection === "workout" ? "page" : undefined}>
           <Play aria-hidden="true" />
           <span>Entrenar</span>

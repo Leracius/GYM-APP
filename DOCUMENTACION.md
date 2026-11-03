@@ -6,7 +6,7 @@
 
 My Workout App es una aplicación web en español para registrar sesiones de fuerza, consultar el historial en un calendario y explorar ejercicios. Está orientada al uso móvil y puede instalarse como PWA. No hay cuentas ni servidor propio de persistencia: las sesiones y preferencias se guardan en el almacenamiento local del navegador. Los catálogos de ejercicios se obtienen de servicios externos mediante rutas API del servidor Next.js.
 
-La pantalla principal reúne cuatro secciones conmutables: **Entrenar**, **Calendario**, **Ejercicios (wger)** y **Rutinas**. Desde la biblioteca se puede abrir un explorador separado de GymFit, con búsqueda de ejercicios y músculos. Las páginas de detalle de ambas fuentes se abren en rutas propias.
+La pantalla principal reúne cinco secciones conmutables: **Inicio**, **Entrenar**, **Calendario**, **Ejercicios (wger)** y **Rutinas**. Inicio es la vista predeterminada y reúne un hero con la mancuerna de marca y accesos a las acciones más frecuentes. Desde la biblioteca se puede abrir un explorador separado de GymFit, con búsqueda de ejercicios y músculos. Las páginas de detalle de ambas fuentes se abren en rutas propias.
 
 ## 2. Funcionalidades y flujos
 
@@ -78,7 +78,9 @@ Los valores comunes de categorías y filtros tienen traducciones visibles al esp
 
 ### 2.6 Apariencia y navegación
 
-- Navegación de la aplicación principal entre Entrenar, Calendario, Ejercicios y Rutinas.
+- Inicio presenta una acción principal para comenzar un entrenamiento libre o continuar la sesión en curso; también permite ir a Rutinas, Calendario y Ejercicios.
+- La mancuerna del hero es una imagen estática con animación CSS sutil de flotación e inclinación; la animación se desactiva con `prefers-reduced-motion`.
+- Navegación de la aplicación principal entre Inicio, Entrenar, Calendario, Ejercicios y Rutinas.
 - En pantallas pequeñas se muestra una barra de navegación inferior.
 - Preferencia de tema claro u oscuro.
 - Cinco paletas de acento: naranja, azul, rojo, rosa y violeta.
@@ -87,11 +89,11 @@ Los valores comunes de categorías y filtros tienen traducciones visibles al esp
 
 ### 2.6 Instalación y acceso rápido (PWA)
 
-- `manifest.ts` define nombre, iconos, pantalla de inicio, modo independiente y orientación vertical.
+- `manifest.ts` define nombre, iconos instalables de la mancuerna cromada, pantalla de inicio, modo independiente y orientación vertical. Los iconos PWA incluyen variantes de 192 y 512 px, además de un icono maskable; iOS usa la misma identidad en `apple-touch-icon.png`.
 - En producción, `PwaOnboarding` intenta registrar `public/sw.js`.
 - La interfaz detecta iOS, Android o escritorio, captura el evento de instalación cuando el navegador lo ofrece y explica cómo instalar o guardar un favorito.
 - La invitación se muestra después de un breve retardo si la app no está instalada y no fue descartada previamente; el botón de encabezado puede volver a abrirla.
-- El Service Worker guarda navegación visitada, recursos estáticos y hasta 24 respuestas de `/api/exercises`. Si falla la navegación, intenta usar la página en caché y luego `offline.html`.
+- El Service Worker guarda navegación visitada, recursos estáticos, la imagen de Inicio y hasta 24 respuestas de `/api/exercises`. Si falla la navegación, intenta usar la página en caché y luego `offline.html`.
 
 El soporte offline no equivale a disponibilidad total de la app: el registro de entrenamientos es local, pero GymFit y nuevas consultas externas necesitan conexión; las búsquedas wger solo pueden reutilizar respuestas previamente almacenadas por el Service Worker.
 
@@ -101,7 +103,7 @@ El soporte offline no equivale a disponibilidad total de la app: el registro de 
 
 | Ruta | Uso |
 | --- | --- |
-| `/` | Entrenamiento, calendario e interfaz wger; admite `?library=wger` para abrir la sección de ejercicios. |
+| `/` | Sección Inicio predeterminada, entrenamiento, calendario e interfaz wger; admite `?library=wger` para abrir la sección de ejercicios. |
 | `/gymfit` | Explorador avanzado GymFit. |
 | `/ejercicios/wger/[id]` | Ruta de detalle asociada a un ejercicio wger. |
 | `/ejercicios/gymfit` | Explorador GymFit simplificado. |
@@ -225,7 +227,7 @@ flowchart LR
   SW --> CS[(Cache Storage)]
 ```
 
-Los principales puntos de entrada de código son `src/app/page.tsx` (shell, navegación, estado compartido y biblioteca wger), `src/components/WorkoutWorkspace.tsx` (entrenamiento y calendario), `src/components/GymFitExerciseLibrary.tsx`, los detalles de ejercicio, `src/lib/workout-log.ts` y los Route Handlers de `src/app/api/`.
+Los principales puntos de entrada de código son `src/app/page.tsx` (shell, navegación, estado compartido y biblioteca wger), `src/components/HomeWorkspace.tsx` (hero y accesos rápidos), `src/components/WorkoutWorkspace.tsx` (entrenamiento y calendario), `src/components/GymFitExerciseLibrary.tsx`, los detalles de ejercicio, `src/lib/workout-log.ts` y los Route Handlers de `src/app/api/`.
 
 ## 6. Estructura del proyecto
 
@@ -238,13 +240,17 @@ src/
 │   ├── globals.css           # Tokens, temas y responsive
 │   ├── layout.tsx            # Layout raíz, metadata y viewport
 │   ├── manifest.ts           # Manifiesto PWA
-│   └── page.tsx              # Shell y biblioteca principal
-├── components/               # Flujos y componentes de interfaz
-├── lib/workout-log.ts        # Modelo y persistencia local
+│   └── page.tsx              # Shell, navegación y biblioteca principal
+├── components/
+│   ├── HomeWorkspace.tsx     # Hero de Inicio y accesos rápidos
+│   └── ...                   # Flujos y componentes de interfaz
+├── lib/workout-log.ts        # Modelo y persistencia local de sesiones
+├── lib/routines.ts           # Modelo y persistencia local de rutinas
 └── types/                    # Contratos wger y GymFit
 public/
 ├── sw.js                     # Service Worker
 ├── offline.html              # Respaldo offline
+├── my-workout-dumbbell.png   # Imagen del hero de Inicio
 └── pwa-*.png                 # Iconos instalables
 ```
 
