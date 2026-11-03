@@ -18,6 +18,8 @@ export type WorkoutSession = {
   startedAt: string;
   endedAt?: string;
   status: "in_progress" | "completed";
+  routineId?: string;
+  routineName?: string;
   exercises: WorkoutExercise[];
   notes: string;
   restEndsAt?: number;

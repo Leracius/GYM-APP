@@ -5,10 +5,12 @@ import Link from "next/link";
 import { WgerExerciseInfo, WgerApiResponse } from "@/types/wger";
 import { ExerciseCard } from "@/components/ExerciseCard";
 import { ApiResponseViewer } from "@/components/ApiResponseViewer";
-import { Search, Dumbbell, RefreshCw, Code2, LayoutGrid, AlertCircle, X, CalendarDays, Play, Sun, Moon, Palette, Check, Download, ArrowUpRight, SlidersHorizontal } from "lucide-react";
+import { Search, Dumbbell, RefreshCw, Code2, LayoutGrid, AlertCircle, X, CalendarDays, Play, Sun, Moon, Palette, Check, Download, ArrowUpRight, SlidersHorizontal, ClipboardList } from "lucide-react";
 import { WorkoutWorkspace } from "@/components/WorkoutWorkspace";
+import { RoutineWorkspace } from "@/components/RoutineWorkspace";
 import { PwaOnboarding } from "@/components/PwaOnboarding";
-import { readWorkoutLog, WorkoutSession, writeWorkoutLog } from "@/lib/workout-log";
+import { createId, localDateKey, readWorkoutLog, WorkoutSession, writeWorkoutLog } from "@/lib/workout-log";
+import { readRoutines, WorkoutRoutine, writeRoutines } from "@/lib/routines";
 
 interface LocalApiResponse {
   success: boolean;
@@ -43,8 +45,9 @@ const COLOR_THEMES = [
 type ColorTheme = (typeof COLOR_THEMES)[number]["id"];
 
 export default function Home() {
-  const [activeSection, setActiveSection] = useState<"workout" | "calendar" | "library">("workout");
+  const [activeSection, setActiveSection] = useState<"workout" | "calendar" | "library" | "routines">("workout");
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
+  const [routines, setRoutines] = useState<WorkoutRoutine[]>([]);
   const [storageReady, setStorageReady] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [colorTheme, setColorTheme] = useState<ColorTheme>("orange");
@@ -98,6 +101,7 @@ export default function Home() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setSessions(readWorkoutLog().sessions);
+      setRoutines(readRoutines());
       setStorageReady(true);
     }, 0);
     return () => window.clearTimeout(timer);
@@ -106,6 +110,33 @@ export default function Home() {
   useEffect(() => {
     if (storageReady) writeWorkoutLog(sessions);
   }, [sessions, storageReady]);
+
+  useEffect(() => {
+    if (storageReady) writeRoutines(routines);
+  }, [routines, storageReady]);
+
+  function startRoutine(routine: WorkoutRoutine) {
+    const active = sessions.find((session) => session.status === "in_progress");
+    if (!active) {
+      const session: WorkoutSession = {
+        id: createId(),
+        date: localDateKey(new Date()),
+        startedAt: new Date().toISOString(),
+        status: "in_progress",
+        routineId: routine.id,
+        routineName: routine.name,
+        exercises: routine.exercises.map((exercise) => ({
+          id: createId(),
+          wgerId: exercise.wgerId,
+          name: exercise.name,
+          sets: Array.from({ length: exercise.setCount }, () => ({ id: createId(), reps: null, weight: null, completed: false })),
+        })),
+        notes: "",
+      };
+      setSessions([session, ...sessions]);
+    }
+    setActiveSection("workout");
+  }
 
   const fetchExercises = useCallback(async (query: string) => {
     setLoading(true);
@@ -172,6 +203,7 @@ export default function Home() {
             <button onClick={() => setActiveSection("workout")} className={`nav-button ${activeSection === "workout" ? "nav-button-active" : ""}`} aria-current={activeSection === "workout" ? "page" : undefined}><Play className="h-3.5 w-3.5" /><span>Entrenar</span></button>
             <button onClick={() => setActiveSection("calendar")} className={`nav-button ${activeSection === "calendar" ? "nav-button-active" : ""}`} aria-current={activeSection === "calendar" ? "page" : undefined}><CalendarDays className="h-3.5 w-3.5" /><span>Calendario</span></button>
             <button onClick={() => setActiveSection("library")} className={`nav-button ${activeSection === "library" ? "nav-button-active" : ""}`} aria-current={activeSection === "library" ? "page" : undefined}><Dumbbell className="h-3.5 w-3.5" /><span>Ejercicios</span></button>
+            <button onClick={() => setActiveSection("routines")} className={`nav-button ${activeSection === "routines" ? "nav-button-active" : ""}`} aria-current={activeSection === "routines" ? "page" : undefined}><ClipboardList className="h-3.5 w-3.5" /><span>Rutinas</span></button>
           </nav>
 
           <div className="flex items-center gap-2">
@@ -470,8 +502,10 @@ export default function Home() {
             </>
           )}
         </section>
+      </main> : activeSection === "routines" ? <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
+        {storageReady && <RoutineWorkspace routines={routines} onRoutinesChange={setRoutines} onStartRoutine={startRoutine} hasActiveSession={sessions.some((session) => session.status === "in_progress")} />}
       </main> : <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
-        {storageReady && <WorkoutWorkspace view={activeSection} sessions={sessions} onSessionsChange={setSessions} onNavigateToWorkout={() => setActiveSection("workout")} />}
+        {storageReady && <WorkoutWorkspace view={activeSection} sessions={sessions} onSessionsChange={setSessions} routines={routines} onStartRoutine={startRoutine} onNavigateToRoutines={() => setActiveSection("routines")} onNavigateToWorkout={() => setActiveSection("workout")} />}
       </main>}
 
       <nav className="mobile-tabbar" aria-label="Navegación principal">
@@ -486,6 +520,10 @@ export default function Home() {
         <button type="button" onClick={() => setActiveSection("library")} className={`mobile-tab ${activeSection === "library" ? "mobile-tab-active" : ""}`} aria-label="Explorador de ejercicios" aria-current={activeSection === "library" ? "page" : undefined}>
           <Dumbbell aria-hidden="true" />
           <span>Explorar</span>
+        </button>
+        <button type="button" onClick={() => setActiveSection("routines")} className={`mobile-tab ${activeSection === "routines" ? "mobile-tab-active" : ""}`} aria-label="Rutinas" aria-current={activeSection === "routines" ? "page" : undefined}>
+          <ClipboardList aria-hidden="true" />
+          <span>Rutinas</span>
         </button>
       </nav>
 

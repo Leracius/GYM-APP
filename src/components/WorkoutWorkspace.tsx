@@ -1,15 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, Check, ChevronLeft, ChevronRight, CirclePlay, Clock3, Dumbbell, Pause, Plus, Search, Trash2 } from "lucide-react";
+import { CalendarDays, Check, ChevronLeft, ChevronRight, CirclePlay, Clock3, Dumbbell, Pause, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { WgerExerciseInfo } from "@/types/wger";
 import { createId, localDateKey, WorkoutExercise, WorkoutSession, WorkoutSet } from "@/lib/workout-log";
+import type { WorkoutRoutine } from "@/lib/routines";
 
 type Props = {
   view: "workout" | "calendar";
   sessions: WorkoutSession[];
   onSessionsChange: (sessions: WorkoutSession[]) => void;
   onNavigateToWorkout: () => void;
+  onNavigateToRoutines: () => void;
+  routines: WorkoutRoutine[];
+  onStartRoutine: (routine: WorkoutRoutine) => void;
 };
 
 const panel = "app-panel rounded-xl border border-[rgba(92,242,229,.2)] bg-[linear-gradient(145deg,rgba(17,31,38,.97),rgba(8,14,19,.97))] shadow-[0_12px_38px_rgba(0,0,0,.28)]";
@@ -76,11 +80,12 @@ function RestTimer({ session, onChange }: { session: WorkoutSession; onChange: (
   );
 }
 
-function LiveWorkout({ sessions, onSessionsChange }: Pick<Props, "sessions" | "onSessionsChange">) {
+function LiveWorkout({ sessions, onSessionsChange, routines, onStartRoutine, onNavigateToRoutines }: Pick<Props, "sessions" | "onSessionsChange" | "routines" | "onStartRoutine" | "onNavigateToRoutines">) {
   const [exerciseQuery, setExerciseQuery] = useState("");
   const [results, setResults] = useState<WgerExerciseInfo[]>([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
+  const [routinePickerOpen, setRoutinePickerOpen] = useState(false);
   const activeSession = sessions.find((session) => session.status === "in_progress");
 
   function replaceSession(updated: WorkoutSession) {
@@ -124,7 +129,18 @@ function LiveWorkout({ sessions, onSessionsChange }: Pick<Props, "sessions" | "o
 
   function completeWorkout() {
     if (!activeSession) return;
-    replaceSession({ ...activeSession, status: "completed", endedAt: new Date().toISOString(), restEndsAt: undefined });
+    if (activeSession.exercises.length === 0) {
+      onSessionsChange(sessions.filter((session) => session.id !== activeSession.id));
+      return;
+    }
+    const endedAt = new Date();
+    replaceSession({ ...activeSession, date: activeSession.routineId ? localDateKey(endedAt) : activeSession.date, status: "completed", endedAt: endedAt.toISOString(), restEndsAt: undefined });
+  }
+
+  function cancelRoutineWorkout() {
+    if (!activeSession?.routineId) return;
+    const confirmed = window.confirm(`¿Cancelar “${activeSession.routineName || "esta rutina"}”? Se descartarán todos los datos de esta sesión.`);
+    if (confirmed) onSessionsChange(sessions.filter((session) => session.id !== activeSession.id));
   }
 
   if (!activeSession) {
@@ -133,9 +149,11 @@ function LiveWorkout({ sessions, onSessionsChange }: Pick<Props, "sessions" | "o
       <section className={`${panel} overflow-hidden p-6 sm:p-9`}>
         <p className="mb-3 font-mono text-[10px] uppercase tracking-[.24em] text-[#c6ff4d]">Entrenamiento en vivo / listo para iniciar</p>
         <h1 className="max-w-2xl text-4xl font-bold uppercase leading-[.98] text-[#e8f4f2] sm:text-6xl">Registrá cada serie sobre la marcha.</h1>
-        <p className="mt-4 max-w-xl text-sm leading-6 text-[#91aaa8]">Sumá los ejercicios que hacés, anotá repeticiones y peso entre series. El registro se guarda automáticamente en este dispositivo.</p>
-        <button onClick={startWorkout} className="mt-7 inline-flex min-h-12 items-center gap-2 rounded-lg bg-[#c6ff4d] px-5 font-bold uppercase tracking-wide text-[#10170a] shadow-[0_0_24px_rgba(198,255,77,.14)] transition hover:bg-[#d8ff83]"><CirclePlay className="h-5 w-5" />Empezar entrenamiento</button>
+        <p className="mt-4 max-w-xl text-sm leading-6 text-[#91aaa8]">Elegí una rutina guardada o empezá en blanco. El registro se guarda automáticamente en este dispositivo.</p>
+        <div className="mt-7 flex flex-wrap gap-3"><button onClick={startWorkout} className="inline-flex min-h-12 items-center gap-2 rounded-lg bg-[#c6ff4d] px-5 font-bold uppercase tracking-wide text-[#10170a] shadow-[0_0_24px_rgba(198,255,77,.14)] transition hover:bg-[#d8ff83]"><CirclePlay className="h-5 w-5" />Iniciar sin rutina</button>
+          {routines.length > 0 ? <button onClick={() => setRoutinePickerOpen((open) => !open)} className={`${button} min-h-12`}><Dumbbell className="h-4 w-4" />Iniciar con rutina</button> : <button onClick={onNavigateToRoutines} className={`${button} min-h-12`}><Plus className="h-4 w-4" />Crear una rutina</button>}</div>
       </section>
+      {routinePickerOpen && <section className={`${panel} p-4 sm:p-5`}><div className="mb-3 flex items-center justify-between"><div><h2 className="text-lg font-semibold">Elegí una rutina</h2><p className="mt-1 text-sm text-[var(--text-secondary)]">Se copiarán sus ejercicios y series en una sesión nueva.</p></div><button className={`${button} min-h-10 w-10 px-0`} onClick={() => setRoutinePickerOpen(false)} aria-label="Cerrar selección"><X className="h-4 w-4" /></button></div><div className="grid gap-2 sm:grid-cols-2">{routines.map((routine) => <button key={routine.id} onClick={() => onStartRoutine(routine)} className="flex min-h-16 items-center justify-between gap-3 rounded-xl border border-[var(--separator)] bg-[var(--surface-2)] p-4 text-left transition hover:border-[var(--accent-border)]"><span><span className="block font-semibold">{routine.name}</span><span className="mt-1 block text-xs text-[var(--text-secondary)]">{routine.exercises.length} ejercicios · {routine.exercises.reduce((sum, exercise) => sum + exercise.setCount, 0)} series</span></span><CirclePlay className="h-5 w-5 shrink-0 text-[var(--accent)]" /></button>)}</div><button className="mt-3 text-sm font-medium text-[var(--accent)]" onClick={onNavigateToRoutines}>Administrar rutinas</button></section>}
       <div className="grid gap-3 sm:grid-cols-3">
         <div className={`${panel} p-4`}><p className="font-mono text-[10px] uppercase tracking-[.16em] text-[#83a09e]">Sesiones registradas</p><p className="mt-2 text-3xl font-semibold tabular-nums">{sessions.filter((session) => session.status === "completed").length}</p></div>
         <div className={`${panel} p-4 sm:col-span-2`}><p className="font-mono text-[10px] uppercase tracking-[.16em] text-[#83a09e]">Último entrenamiento</p><p className="mt-2 text-lg font-semibold capitalize">{latest ? displayDate(latest.date) : "Todavía no hay sesiones"}</p></div>
@@ -148,8 +166,8 @@ function LiveWorkout({ sessions, onSessionsChange }: Pick<Props, "sessions" | "o
 
   return <div className="space-y-5">
     <section className={`${panel} flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5`}>
-      <div><p className="font-mono text-[10px] uppercase tracking-[.2em] text-[#c6ff4d]">Sesión en curso · {displayDate(activeSession.date)}</p><h1 className="mt-1 text-2xl font-bold uppercase sm:text-3xl">Entrenamiento libre</h1><p className="mt-1 text-xs text-[#83a09e]">{activeSession.exercises.length} ejercicios · {completedSets}/{totalSets} series completadas</p></div>
-      <button onClick={completeWorkout} disabled={!activeSession.exercises.length} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[rgba(198,255,77,.4)] bg-[rgba(198,255,77,.1)] px-4 text-sm font-semibold text-[#c6ff4d] transition hover:bg-[rgba(198,255,77,.18)] disabled:opacity-40"><Check className="h-4 w-4" />Finalizar sesión</button>
+      <div><p className="font-mono text-[10px] uppercase tracking-[.2em] text-[#c6ff4d]">Sesión en curso · {displayDate(activeSession.date)}</p><h1 className="mt-1 text-2xl font-bold uppercase sm:text-3xl">{activeSession.routineName || "Entrenamiento libre"}</h1><p className="mt-1 text-xs text-[#83a09e]">{activeSession.exercises.length} ejercicios · {completedSets}/{totalSets} series completadas</p></div>
+      <div className="flex flex-wrap gap-2"><button onClick={completeWorkout} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[rgba(198,255,77,.4)] bg-[rgba(198,255,77,.1)] px-4 text-sm font-semibold text-[#c6ff4d] transition hover:bg-[rgba(198,255,77,.18)]"><Check className="h-4 w-4" />Finalizar sesión</button>{activeSession.routineId && <button onClick={cancelRoutineWorkout} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 text-sm font-semibold text-red-400 transition hover:bg-red-500/20"><Trash2 className="h-4 w-4" />Cancelar rutina</button>}</div>
     </section>
 
     <RestTimer session={activeSession} onChange={(restEndsAt) => replaceSession({ ...activeSession, restEndsAt })} />
@@ -168,19 +186,67 @@ function LiveWorkout({ sessions, onSessionsChange }: Pick<Props, "sessions" | "o
     {activeSession.exercises.length === 0 ? <div className={`${panel} border-dashed p-10 text-center`}><Dumbbell className="mx-auto h-8 w-8 text-[#5cf2e5]" /><p className="mt-3 font-semibold">Agregá el primer ejercicio</p><p className="mt-1 text-sm text-[#83a09e]">Podés buscarlo en wger o anotarlo con un nombre libre.</p></div> : <div className="space-y-3">
       {activeSession.exercises.map((exercise, exerciseIndex) => <article key={exercise.id} className={`${panel} p-4 sm:p-5`}>
         <div className="mb-4 flex items-start justify-between gap-3"><div><p className="font-mono text-[10px] uppercase tracking-[.16em] text-[#83a09e]">Ejercicio {String(exerciseIndex + 1).padStart(2, "0")}{exercise.wgerId ? ` · WGER #${exercise.wgerId}` : " · MANUAL"}</p><h2 className="mt-1 text-xl font-bold uppercase">{exercise.name}</h2></div><button className="rounded-md p-2 text-[#83a09e] transition hover:bg-[rgba(255,92,170,.1)] hover:text-[#ff5caa]" onClick={() => replaceSession({ ...activeSession, exercises: activeSession.exercises.filter((item) => item.id !== exercise.id) })} aria-label={`Eliminar ${exercise.name}`}><Trash2 className="h-4 w-4" /></button></div>
-        <div className="grid grid-cols-[42px_1fr_1fr_48px] items-center gap-2 border-b border-[rgba(92,242,229,.13)] pb-2 font-mono text-[9px] uppercase tracking-[.13em] text-[#83a09e] sm:grid-cols-[52px_1fr_1fr_56px]"><span>Serie</span><span>Reps</span><span>Peso (kg)</span><span className="text-center">OK</span></div>
-        <div className="space-y-2 pt-2">{exercise.sets.map((set, setIndex) => <div key={set.id} className={`grid grid-cols-[42px_1fr_1fr_48px] items-center gap-2 rounded-lg p-1.5 sm:grid-cols-[52px_1fr_1fr_56px] ${set.completed ? "bg-[rgba(198,255,77,.06)]" : ""}`}>
+        <div className={`grid ${activeSession.routineId ? "grid-cols-[42px_1fr_48px] sm:grid-cols-[52px_1fr_56px]" : "grid-cols-[42px_1fr_1fr_48px] sm:grid-cols-[52px_1fr_1fr_56px]"} items-center gap-2 border-b border-[rgba(92,242,229,.13)] pb-2 font-mono text-[9px] uppercase tracking-[.13em] text-[#83a09e]`}><span>Serie</span>{!activeSession.routineId && <span>Reps</span>}<span>Peso (kg)</span><span className="text-center">OK</span></div>
+        <div className="space-y-2 pt-2">{exercise.sets.map((set, setIndex) => <div key={set.id} className={`grid ${activeSession.routineId ? "grid-cols-[42px_1fr_48px] sm:grid-cols-[52px_1fr_56px]" : "grid-cols-[42px_1fr_1fr_48px] sm:grid-cols-[52px_1fr_1fr_56px]"} items-center gap-2 rounded-lg p-1.5 ${set.completed ? "bg-[rgba(198,255,77,.06)]" : ""}`}>
           <span className="font-mono text-sm text-[#5cf2e5]">{String(setIndex + 1).padStart(2, "0")}</span>
-          <input className={input} type="number" min="0" inputMode="numeric" value={set.reps ?? ""} onChange={(event) => updateExercise(exercise.id, (item) => ({ ...item, sets: item.sets.map((row) => row.id === set.id ? { ...row, reps: event.target.value === "" ? null : Number(event.target.value) } : row) }))} aria-label={`Repeticiones de serie ${setIndex + 1}`} placeholder="8" />
+          {!activeSession.routineId && <input className={input} type="number" min="0" inputMode="numeric" value={set.reps ?? ""} onChange={(event) => updateExercise(exercise.id, (item) => ({ ...item, sets: item.sets.map((row) => row.id === set.id ? { ...row, reps: event.target.value === "" ? null : Number(event.target.value) } : row) }))} aria-label={`Repeticiones de serie ${setIndex + 1}`} placeholder="8" />}
           <input className={input} type="number" min="0" step="0.5" inputMode="decimal" value={set.weight ?? ""} onChange={(event) => updateExercise(exercise.id, (item) => ({ ...item, sets: item.sets.map((row) => row.id === set.id ? { ...row, weight: event.target.value === "" ? null : Number(event.target.value) } : row) }))} aria-label={`Peso en kilos de serie ${setIndex + 1}`} placeholder="—" />
           <button onClick={() => { const completed = !set.completed; updateExercise(exercise.id, (item) => ({ ...item, sets: item.sets.map((row) => row.id === set.id ? { ...row, completed } : row) })); if (completed) replaceSession({ ...activeSession, restEndsAt: Date.now() + 90_000, exercises: activeSession.exercises.map((item) => item.id === exercise.id ? { ...item, sets: item.sets.map((row) => row.id === set.id ? { ...row, completed } : row) } : item) }); }} className={`flex h-11 w-11 items-center justify-center rounded-lg border transition ${set.completed ? "border-[#c6ff4d] bg-[#c6ff4d] text-[#10170a]" : "border-[rgba(92,242,229,.25)] text-[#83a09e] hover:border-[#5cf2e5] hover:text-[#5cf2e5]"}`} aria-label={set.completed ? "Marcar serie como pendiente" : "Completar serie e iniciar descanso"}><Check className="h-4 w-4" /></button>
         </div>)}</div>
-        <div className="mt-3 flex justify-end"><button onClick={() => updateExercise(exercise.id, (item) => ({ ...item, sets: [...item.sets, makeSet(item.sets[item.sets.length - 1])] }))} className="inline-flex min-h-10 items-center gap-1.5 rounded-md px-3 text-xs font-semibold text-[#5cf2e5] transition hover:bg-[rgba(92,242,229,.08)]"><Plus className="h-4 w-4" />Agregar serie</button></div>
+        {!activeSession.routineId && <div className="mt-3 flex justify-end"><button onClick={() => updateExercise(exercise.id, (item) => ({ ...item, sets: [...item.sets, makeSet(item.sets[item.sets.length - 1])] }))} className="inline-flex min-h-10 items-center gap-1.5 rounded-md px-3 text-xs font-semibold text-[#5cf2e5] transition hover:bg-[rgba(92,242,229,.08)]"><Plus className="h-4 w-4" />Agregar serie</button></div>}
       </article>)}
     </div>}
 
     <label className={`${panel} block p-4`}><span className="font-mono text-[10px] uppercase tracking-[.16em] text-[#83a09e]">Notas de la sesión</span><textarea className={`${input} mt-2 min-h-24 resize-y`} value={activeSession.notes} onChange={(event) => replaceSession({ ...activeSession, notes: event.target.value })} placeholder="¿Cómo te sentiste? Anotá lo que quieras recordar…" /></label>
   </div>;
+}
+
+function CompletedSessionEditor({ session, onCancel, onSave }: { session: WorkoutSession; onCancel: () => void; onSave: (session: WorkoutSession) => void }) {
+  const [draft, setDraft] = useState<WorkoutSession>(() => ({
+    ...session,
+    exercises: session.exercises.map((exercise) => ({ ...exercise, sets: exercise.sets.map((set) => ({ ...set })) })),
+  }));
+  const [newExerciseName, setNewExerciseName] = useState("");
+  const [error, setError] = useState("");
+  const editInput = "min-h-11 w-full rounded-lg border border-[var(--separator)] bg-[var(--app-bg)] px-3 text-base text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]";
+
+  function updateExercise(exerciseId: string, update: (exercise: WorkoutExercise) => WorkoutExercise) {
+    setDraft((current) => ({ ...current, exercises: current.exercises.map((exercise) => exercise.id === exerciseId ? update(exercise) : exercise) }));
+  }
+
+  function save(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!draft.date) { setError("Elegí una fecha para el entrenamiento."); return; }
+    if (draft.exercises.length === 0) { setError("El entrenamiento debe tener al menos un ejercicio."); return; }
+    onSave(draft);
+  }
+
+  return <form onSubmit={save} className="mt-4 space-y-4 rounded-xl border border-[var(--accent-border)] bg-[var(--surface-2)] p-4">
+    <div className="grid gap-3 sm:grid-cols-2">
+      <label className="grid gap-1.5 text-xs font-semibold text-[var(--text-secondary)]">Fecha del entrenamiento<input className={editInput} type="date" value={draft.date} onChange={(event) => setDraft((current) => ({ ...current, date: event.target.value }))} /></label>
+      {draft.routineId && <label className="grid gap-1.5 text-xs font-semibold text-[var(--text-secondary)]">Nombre de la rutina en este registro<input className={editInput} value={draft.routineName || ""} onChange={(event) => setDraft((current) => ({ ...current, routineName: event.target.value }))} /></label>}
+    </div>
+    <label className="grid gap-1.5 text-xs font-semibold text-[var(--text-secondary)]">Notas<textarea className={`${editInput} min-h-20 py-3`} value={draft.notes} onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))} placeholder="Notas del entrenamiento" /></label>
+
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2"><h3 className="text-sm font-semibold text-[var(--text-primary)]">Ejercicios y series</h3><span className="text-xs text-[var(--text-secondary)]">{draft.exercises.length} ejercicios</span></div>
+      {draft.exercises.map((exercise, exerciseIndex) => <article key={exercise.id} className="rounded-xl border border-[var(--separator)] bg-[var(--surface)] p-3">
+        <div className="flex items-center gap-2"><span className="font-mono text-xs text-[var(--accent)]">{String(exerciseIndex + 1).padStart(2, "0")}</span><input className={`${editInput} flex-1 font-medium`} value={exercise.name} onChange={(event) => updateExercise(exercise.id, (item) => ({ ...item, name: event.target.value }))} aria-label={`Nombre del ejercicio ${exerciseIndex + 1}`} /><button type="button" onClick={() => setDraft((current) => ({ ...current, exercises: current.exercises.filter((item) => item.id !== exercise.id) }))} className="grid h-11 w-11 shrink-0 place-items-center rounded-lg text-red-500 hover:bg-red-500/10" aria-label={`Eliminar ${exercise.name}`}><Trash2 size={17} /></button></div>
+        <div className="mt-3 space-y-2">{exercise.sets.map((set, setIndex) => <div key={set.id} className={`grid ${draft.routineId ? "grid-cols-[36px_minmax(0,1fr)_48px]" : "grid-cols-[36px_minmax(0,1fr)_minmax(0,1fr)_48px]"} items-center gap-2`}>
+          <span className="font-mono text-xs text-[var(--text-secondary)]">{setIndex + 1}</span>
+          {!draft.routineId && <input className={editInput} type="number" min="0" inputMode="numeric" value={set.reps ?? ""} onChange={(event) => updateExercise(exercise.id, (item) => ({ ...item, sets: item.sets.map((row) => row.id === set.id ? { ...row, reps: event.target.value === "" ? null : Number(event.target.value) } : row) }))} aria-label={`Repeticiones, ${exercise.name}, serie ${setIndex + 1}`} placeholder="Reps" />}
+          <input className={editInput} type="number" min="0" step="0.5" inputMode="decimal" value={set.weight ?? ""} onChange={(event) => updateExercise(exercise.id, (item) => ({ ...item, sets: item.sets.map((row) => row.id === set.id ? { ...row, weight: event.target.value === "" ? null : Number(event.target.value) } : row) }))} aria-label={`Peso, ${exercise.name}, serie ${setIndex + 1}`} placeholder="Peso kg" />
+          <button type="button" onClick={() => updateExercise(exercise.id, (item) => ({ ...item, sets: item.sets.map((row) => row.id === set.id ? { ...row, completed: !row.completed } : row) }))} aria-pressed={set.completed} aria-label={set.completed ? `Marcar serie ${setIndex + 1} de ${exercise.name} como pendiente` : `Marcar serie ${setIndex + 1} de ${exercise.name} como completada`} className={`grid h-11 w-11 place-items-center rounded-lg border ${set.completed ? "border-[var(--accent)] bg-[var(--accent-fill)] text-[var(--accent-on-fill)]" : "border-[var(--separator)] text-[var(--text-secondary)]"}`}><Check size={17} /></button>
+          {exercise.sets.length > 1 && <button type="button" onClick={() => updateExercise(exercise.id, (item) => ({ ...item, sets: item.sets.filter((row) => row.id !== set.id) }))} className="col-start-2 inline-flex min-h-10 justify-self-start px-2 text-xs text-red-500 underline" aria-label={`Quitar serie ${setIndex + 1} de ${exercise.name}`}>Quitar serie</button>}
+        </div>)}</div>
+        <button type="button" onClick={() => updateExercise(exercise.id, (item) => ({ ...item, sets: [...item.sets, { id: createId(), reps: null, weight: null, completed: false }] }))} className="mt-2 inline-flex min-h-10 items-center gap-1.5 px-2 text-xs font-semibold text-[var(--accent)]"><Plus size={15} />Agregar serie</button>
+      </article>)}
+    </div>
+
+    <div className="flex flex-col gap-2 sm:flex-row"><input className={editInput} value={newExerciseName} onChange={(event) => setNewExerciseName(event.target.value)} placeholder="Nombre del ejercicio a agregar" aria-label="Nuevo ejercicio" /><button type="button" disabled={!newExerciseName.trim()} onClick={() => { const name = newExerciseName.trim(); setDraft((current) => ({ ...current, exercises: [...current.exercises, { id: createId(), name, sets: [{ id: createId(), reps: null, weight: null, completed: false }] }] })); setNewExerciseName(""); }} className={button}><Plus size={16} />Agregar ejercicio</button></div>
+    {error && <p role="alert" className="text-sm text-red-500">{error}</p>}
+    <div className="flex flex-wrap justify-end gap-2"><button type="button" className={button} onClick={onCancel}>Cancelar edición</button><button type="submit" className={`${button} border-[var(--accent-fill)] bg-[var(--accent-fill)] text-[var(--accent-on-fill)]`}><Check size={16} />Guardar cambios</button></div>
+  </form>;
 }
 
 function WorkoutCalendar({ sessions, onSessionsChange, onNavigateToWorkout }: Pick<Props, "sessions" | "onSessionsChange" | "onNavigateToWorkout">) {
@@ -193,6 +259,17 @@ function WorkoutCalendar({ sessions, onSessionsChange, onNavigateToWorkout }: Pi
   const cells = useMemo(() => [...Array(offset).fill(null), ...Array.from({ length: daysInMonth }, (_, index) => index + 1)], [daysInMonth, offset]);
   const sessionsByDate = useMemo(() => sessions.reduce<Record<string, WorkoutSession[]>>((grouped, session) => { grouped[session.date] = [...(grouped[session.date] || []), session]; return grouped; }, {}), [sessions]);
   const selectedSessions = sessionsByDate[selectedDay] || [];
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+
+  function saveEditedSession(updated: WorkoutSession) {
+    onSessionsChange(sessions.map((session) => session.id === updated.id ? updated : session));
+    setEditingSessionId(null);
+    if (updated.date !== selectedDay) {
+      const [year, month] = updated.date.split("-").map(Number);
+      setMonth(new Date(year, month - 1, 1));
+      setSelectedDay(updated.date);
+    }
+  }
 
   function shiftMonth(amount: number) {
     const next = new Date(month.getFullYear(), month.getMonth() + amount, 1);
@@ -225,14 +302,14 @@ function WorkoutCalendar({ sessions, onSessionsChange, onNavigateToWorkout }: Pi
         }
         onNavigateToWorkout();
       }}><CirclePlay className="h-4 w-4" />{sessions.some((session) => session.status === "in_progress") ? "Continuar sesión" : "Registrar este día"}</button>
-      {selectedSessions.length ? <div className="mt-5 space-y-3">{selectedSessions.map((session) => <article key={session.id} className="rounded-lg border border-[rgba(92,242,229,.15)] bg-[#081216] p-3"><div className="flex items-center justify-between gap-2"><span className={`rounded px-2 py-1 font-mono text-[9px] uppercase tracking-wider ${session.status === "completed" ? "bg-[rgba(198,255,77,.1)] text-[#c6ff4d]" : "bg-[rgba(92,242,229,.1)] text-[#5cf2e5]"}`}>{session.status === "completed" ? "Completado" : "En curso"}</span><span className="text-[10px] text-[#83a09e]">{session.exercises.length} ejercicios</span></div><ul className="mt-3 space-y-1.5">{session.exercises.map((exercise) => <li key={exercise.id} className="flex justify-between gap-2 text-sm"><span>{exercise.name}</span><span className="shrink-0 text-xs text-[#83a09e]">{exercise.sets.filter((set) => set.completed).length}/{exercise.sets.length} series</span></li>)}</ul>{session.notes && <p className="mt-3 border-t border-[rgba(92,242,229,.12)] pt-3 text-xs leading-5 text-[#91aaa8]">{session.notes}</p>}</article>)}</div> : <div className="mt-5 rounded-lg border border-dashed border-[rgba(92,242,229,.18)] px-4 py-8 text-center"><CalendarDays className="mx-auto h-6 w-6 text-[#83a09e]" /><p className="mt-2 text-sm text-[#91aaa8]">No hay entrenamientos registrados este día.</p></div>}
+      {selectedSessions.length ? <div className="mt-5 space-y-3">{selectedSessions.map((session) => <article key={session.id} className="rounded-lg border border-[rgba(92,242,229,.15)] bg-[#081216] p-3"><div className="flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2"><span className={`rounded px-2 py-1 font-mono text-[9px] uppercase tracking-wider ${session.status === "completed" ? "bg-[rgba(198,255,77,.1)] text-[#c6ff4d]" : "bg-[rgba(92,242,229,.1)] text-[#5cf2e5]"}`}>{session.status === "completed" ? "Completado" : "En curso"}</span><span className="text-xs text-[#83a09e]">{session.routineName || `${session.exercises.length} ejercicios`}</span></div>{session.status === "completed" && <button className={`${button} min-h-10 px-3`} onClick={() => setEditingSessionId((current) => current === session.id ? null : session.id)} aria-expanded={editingSessionId === session.id}><Pencil size={14} />{editingSessionId === session.id ? "Cerrar editor" : "Editar"}</button>}</div><ul className="mt-3 space-y-1.5">{session.exercises.map((exercise) => <li key={exercise.id} className="flex justify-between gap-2 text-sm"><span>{exercise.name}</span><span className="shrink-0 text-xs text-[#83a09e]">{exercise.sets.filter((set) => set.completed).length}/{exercise.sets.length} series</span></li>)}</ul>{session.notes && <p className="mt-3 border-t border-[rgba(92,242,229,.12)] pt-3 text-xs leading-5 text-[#91aaa8]">{session.notes}</p>}{editingSessionId === session.id && <CompletedSessionEditor key={session.id} session={session} onCancel={() => setEditingSessionId(null)} onSave={saveEditedSession} />}</article>)}</div> : <div className="mt-5 rounded-lg border border-dashed border-[rgba(92,242,229,.18)] px-4 py-8 text-center"><CalendarDays className="mx-auto h-6 w-6 text-[#83a09e]" /><p className="mt-2 text-sm text-[#91aaa8]">No hay entrenamientos registrados este día.</p></div>}
     </aside>
   </div>;
 }
 
 export function WorkoutWorkspace(props: Props) {
   return props.view === "workout"
-    ? <LiveWorkout sessions={props.sessions} onSessionsChange={props.onSessionsChange} />
+    ? <LiveWorkout sessions={props.sessions} onSessionsChange={props.onSessionsChange} routines={props.routines} onStartRoutine={props.onStartRoutine} onNavigateToRoutines={props.onNavigateToRoutines} />
     : <WorkoutCalendar sessions={props.sessions} onSessionsChange={props.onSessionsChange} onNavigateToWorkout={props.onNavigateToWorkout} />;
 }
 
