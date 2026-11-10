@@ -3,14 +3,36 @@ import { createId } from "@/lib/workout-log";
 export type RoutineExercise = {
   id: string;
   name: string;
-  wgerId: number;
+  kind?: "exercise";
+  wgerId?: number;
   setCount: number;
 };
+
+export type RoutinePhase = {
+  id: string;
+  name: string;
+  kind: "warmup" | "stretching";
+  durationMinutes: number;
+};
+
+export type RoutineItem = RoutineExercise | RoutinePhase;
+
+export function isRoutinePhase(item: RoutineItem): item is RoutinePhase {
+  return item.kind === "warmup" || item.kind === "stretching";
+}
+
+export function routineExerciseCount(items: RoutineItem[]) {
+  return items.filter((item) => !isRoutinePhase(item)).length;
+}
+
+export function routineSetCount(items: RoutineItem[]) {
+  return items.reduce((total, item) => total + (isRoutinePhase(item) ? 0 : item.setCount), 0);
+}
 
 export type WorkoutRoutine = {
   id: string;
   name: string;
-  exercises: RoutineExercise[];
+  exercises: RoutineItem[];
   createdAt: string;
   updatedAt: string;
 };

@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { ArrowRight, CalendarDays, ClipboardList, Dumbbell, Search } from "lucide-react";
-import type { WorkoutSession } from "@/lib/workout-log";
+import { TiltCard } from "@/components/TiltCard";
+import { workoutExerciseCount, type WorkoutSession } from "@/lib/workout-log";
 
 type Props = {
   activeSession?: WorkoutSession;
@@ -66,7 +66,7 @@ export function HomeWorkspace({
         </h1>
         <p className="mt-4 max-w-lg text-base leading-7 text-[var(--text-secondary)]">
           {activeSession
-            ? `${activeSession.routineName || "Entrenamiento libre"} · ${activeSession.exercises.length} ${activeSession.exercises.length === 1 ? "ejercicio" : "ejercicios"} en curso.`
+            ? `${activeSession.routineName || "Entrenamiento libre"} · ${workoutExerciseCount(activeSession.exercises)} ${workoutExerciseCount(activeSession.exercises) === 1 ? "ejercicio" : "ejercicios"} en curso.`
             : "Empezá una sesión libre o elegí una rutina. Registrá cada serie y seguí tu progreso desde el calendario."}
         </p>
         <div className="mt-7 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
@@ -93,17 +93,11 @@ export function HomeWorkspace({
         </div>
       </div>
 
-      <div className="home-hero-art pointer-events-none absolute inset-y-0 right-0 z-0 flex w-full items-center justify-center overflow-hidden lg:relative lg:w-auto">
+      <div className="home-hero-art absolute inset-y-0 right-0 z-0 flex w-full items-center justify-center overflow-hidden lg:relative lg:w-auto">
         <div className="home-art-glow absolute right-[4%] top-1/2 aspect-square w-[78%] -translate-y-1/2 rounded-full bg-[var(--accent-soft)] blur-3xl" aria-hidden="true" />
-        <Image
-          src="/my-workout-dumbbell.png"
-          alt="Mancuerna low-poly plateada con el nombre My Workout App"
-          width={1438}
-          height={1094}
-          priority
-          sizes="(max-width: 1023px) 82vw, 48vw"
-          className="home-dumbbell-motion relative z-10 h-auto w-[92%] max-w-[640px] object-contain opacity-[.23] sm:w-[78%] lg:w-[108%] lg:max-w-none lg:translate-x-[7%] lg:opacity-100"
-        />
+        <div className="home-dumbbell-motion relative z-10 flex w-full translate-x-0 items-center justify-center lg:translate-x-[7%]">
+          <TiltCard />
+        </div>
       </div>
     </section>
 

@@ -157,6 +157,48 @@ header > div, footer > div { max-width: 1180px; }
 .mode-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
 .mode-option { display:flex; min-height:44px; align-items:center; justify-content:center; gap:7px; border:1px solid var(--separator); border-radius:12px; background:var(--surface-2); color:var(--text-secondary); font-size:13px; font-weight:600; transition:all .16s ease; }
 .mode-option-selected { border-color:var(--accent-border); background:var(--accent-soft); color:var(--accent); }
+/* ══ Tilt ═══════════════════════════════════════════════════
+   A picture card that gives under the pointer. Almost nothing
+   is here: the rotation, both gradients and the shadow are
+   written per frame from the pointer's position, and a rule
+   in this file that also had an opinion about any of them
+   would be a second author. What is left is the things that
+   are true whatever the pointer is doing. */
+.tlt {
+  position:relative;
+  /* The frame is what the pointer is measured against and it
+     is deliberately the ONLY thing in here that never moves.
+     The perspective lives on it rather than on the card for
+     the usual reason: on the card itself, `perspective` is
+     applied per element and the vanishing point rides along
+     with the rotation instead of staying put in the room. */
+  touch-action:pan-y;
+}
+.tlt-card {
+  position:absolute;
+  inset:0;
+  overflow:hidden;
+  background-color:var(--surface-2);
+  background-position:center;
+  background-size:cover;
+  /* `cover` and a fixed frame share the local asset's aspect
+     ratio, so the dumbbell and wordmark stay fully visible. */
+  /* NO `will-change`. It would hold a composited layer for
+     every copy of this block on the wall, permanently, to
+     save one frame on a hover that may never come — the same
+     bookkeeping CLAUDE.md objects to for permanent rAF. The
+     browser promotes this on its own once the transform
+     starts moving. */
+}
+/* ── the dent and the rim ───────────────────────────────────
+   One element, two gradients, both placed from the pointer —
+   the dark one under it and the light one at its mirror. It
+   inherits the corner rather than being told one, so the knob
+   only has to reach the card. */
+.tlt-sheen { position:absolute; inset:0; border-radius:inherit; pointer-events:none; }
+.home-tilt-card { width:min(92vw,640px) !important; height:auto !important; aspect-ratio:420.62 / 320; opacity:.23; }
+@media (min-width:640px) { .home-tilt-card { width:min(78vw,640px) !important; opacity:.42; } }
+@media (min-width:1024px) { .home-tilt-card { width:min(108%,640px) !important; opacity:1; } }
 main { max-width:1180px; color:var(--text-primary); }
 main h1 { color:var(--text-primary); font-size:clamp(2rem, 4vw, 3.35rem); font-weight:700; line-height:1.05; letter-spacing:-.055em; text-transform:none !important; text-shadow:none; }
 main h1::before { content:none; }

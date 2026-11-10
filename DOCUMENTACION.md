@@ -6,7 +6,7 @@
 
 My Workout App es una aplicación web en español para registrar sesiones de fuerza, consultar el historial en un calendario y explorar ejercicios. Está orientada al uso móvil y puede instalarse como PWA. No hay cuentas ni servidor propio de persistencia: las sesiones y preferencias se guardan en el almacenamiento local del navegador. Los catálogos de ejercicios se obtienen de servicios externos mediante rutas API del servidor Next.js.
 
-La pantalla principal reúne cinco secciones conmutables: **Inicio**, **Entrenar**, **Calendario**, **Ejercicios (wger)** y **Rutinas**. Inicio es la vista predeterminada y reúne un hero con la mancuerna de marca y accesos a las acciones más frecuentes. Desde la biblioteca se puede abrir un explorador separado de GymFit, con búsqueda de ejercicios y músculos. Las páginas de detalle de ambas fuentes se abren en rutas propias.
+La pantalla principal reúne cinco secciones conmutables: **Inicio**, **Entrenar**, **Calendario**, **Ejercicios (wger)** y **Rutinas**. Inicio es la vista predeterminada y reúne un hero con la mancuerna de marca dentro de una tarjeta Tilt interactiva, además de accesos a las acciones más frecuentes. Desde la biblioteca se puede abrir un explorador separado de GymFit, con búsqueda de ejercicios y músculos. Las páginas de detalle de ambas fuentes se abren en rutas propias.
 
 ## 2. Funcionalidades y flujos
 
@@ -42,9 +42,10 @@ El selector abre por defecto en el día local actual. Si existe una sesión en c
 ### 2.3 Rutinas
 
 - La sección dedicada permite crear, editar y eliminar plantillas locales.
-- Cada plantilla guarda nombre y ejercicios de wger con cantidad fija de series por ejercicio. La búsqueda sugiere resultados al escribir al menos dos caracteres.
-- El orden de ejercicios se puede cambiar y cada cantidad se ajusta antes de guardar; no se guarda peso en la plantilla.
-- La rutina se puede iniciar desde su tarjeta o desde Entrenar. Al iniciarla se genera una sesión nueva para la fecha local, con una copia de los ejercicios y series vacías para completar el peso.
+- Cada plantilla guarda nombre y bloques ordenados: ejercicios de wger o escritos manualmente, calentamientos y estiramientos con nombre y duración en minutos.
+- Los ejercicios guardan una cantidad fija de series, sin peso; en el editor, los bloques muestran su información y solo ofrecen la opción de quitarlos. La búsqueda de wger sugiere resultados al escribir al menos dos caracteres y permite guardar el texto como ejercicio manual.
+- La rutina se puede iniciar desde su tarjeta o desde Entrenar. Al iniciarla se genera una sesión nueva para la fecha local, con una copia de sus ejercicios y series vacías para completar el peso; los bloques de movilidad se pueden marcar como realizados.
+- La interfaz prioriza móvil con controles táctiles de al menos 44 px. Adapta los patrones [AI Autocomplete](https://bencho.dev/blocks/ai-autocomplete), [Jelly Tabs](https://bencho.dev/blocks/jelly-tabs) y [Reorder List](https://bencho.dev/blocks/liq-arrange) de Bencho al estilo existente de la app.
 - Al finalizar una sesión con rutina, se registra la fecha local de finalización y `endedAt`, junto con los pesos anotados.
 - Las sesiones guardan `routineId` y `routineName`; los datos de ejecución permanecen en el registro aunque la plantilla original se modifique o elimine.
 
@@ -148,6 +149,9 @@ type WorkoutExercise = {
   wgerId?: number;
   name: string;
   sets: WorkoutSet[];
+  kind?: "warmup" | "stretching";
+  durationMinutes?: number;
+  completed?: boolean;
 };
 
 type WorkoutSession = {
@@ -174,20 +178,28 @@ Clave: `gym-systems.routines.v1`.
 type RoutineExercise = {
   id: string;
   name: string;
-  wgerId: number;
+  kind?: "exercise";
+  wgerId?: number;
   setCount: number;
+};
+
+type RoutinePhase = {
+  id: string;
+  name: string;
+  kind: "warmup" | "stretching";
+  durationMinutes: number;
 };
 
 type WorkoutRoutine = {
   id: string;
   name: string;
-  exercises: RoutineExercise[];
+  exercises: (RoutineExercise | RoutinePhase)[];
   createdAt: string;
   updatedAt: string;
 };
 ```
 
-Al iniciar, los elementos de la plantilla se convierten en `WorkoutExercise` y `WorkoutSet` nuevos dentro de la sesión. Por diseño, los cambios posteriores a la plantilla no reescriben sesiones existentes.
+Al iniciar, los ejercicios de la plantilla se convierten en `WorkoutExercise` y `WorkoutSet` nuevos; los periodos se guardan como elementos de movilidad con estado realizado dentro de la sesión. Por diseño, los cambios posteriores a la plantilla no reescriben sesiones existentes.
 
 ### Otras claves locales
 

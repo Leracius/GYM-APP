@@ -10,7 +10,18 @@ export type WorkoutExercise = {
   wgerId?: number;
   name: string;
   sets: WorkoutSet[];
+  kind?: "warmup" | "stretching";
+  durationMinutes?: number;
+  completed?: boolean;
 };
+
+export function isWorkoutPeriod(item: WorkoutExercise) {
+  return item.kind === "warmup" || item.kind === "stretching";
+}
+
+export function workoutExerciseCount(items: WorkoutExercise[]) {
+  return items.filter((item) => !isWorkoutPeriod(item)).length;
+}
 
 export type WorkoutSession = {
   id: string;

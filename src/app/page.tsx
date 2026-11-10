@@ -11,7 +11,7 @@ import { RoutineWorkspace } from "@/components/RoutineWorkspace";
 import { HomeWorkspace } from "@/components/HomeWorkspace";
 import { PwaOnboarding } from "@/components/PwaOnboarding";
 import { createId, localDateKey, readWorkoutLog, WorkoutSession, writeWorkoutLog } from "@/lib/workout-log";
-import { readRoutines, WorkoutRoutine, writeRoutines } from "@/lib/routines";
+import { isRoutinePhase, readRoutines, WorkoutRoutine, writeRoutines } from "@/lib/routines";
 
 interface LocalApiResponse {
   success: boolean;
@@ -126,12 +126,9 @@ export default function Home() {
         status: "in_progress",
         routineId: routine.id,
         routineName: routine.name,
-        exercises: routine.exercises.map((exercise) => ({
-          id: createId(),
-          wgerId: exercise.wgerId,
-          name: exercise.name,
-          sets: Array.from({ length: exercise.setCount }, () => ({ id: createId(), reps: null, weight: null, completed: false })),
-        })),
+        exercises: routine.exercises.map((item) => isRoutinePhase(item)
+          ? { id: createId(), name: item.name, kind: item.kind, durationMinutes: item.durationMinutes, completed: false, sets: [] }
+          : { id: createId(), wgerId: item.wgerId, name: item.name, sets: Array.from({ length: item.setCount }, () => ({ id: createId(), reps: null, weight: null, completed: false })) }),
         notes: "",
       };
       setSessions([session, ...sessions]);
